@@ -1,0 +1,165 @@
+
+이름 : 임대섭
+
+int gndpin = A5; // GND
+int vccpin = A4; // VCC
+int xpin = A3;   // x축
+int ypin = A2;   // y축
+int swpin = A1;  //스위치
+int melodypin = 13; // 멜로디
+int moodpin = 10;   //무드등
+int Securitypin = 7;  //보안 
+int Security_ledpin = 6;  //보안 
+int streetlamp = 12; // 주위 불빛 세기 감지
+int streetlamp_led = 11; // 붗빛세기에 반응하는 등
+int x;
+int scaledata[8] = {261, 293, 320, 349, 391, 440, 493, 523 };
+//노래 저장배열
+void setup() {
+  pinMode(gndpin,OUTPUT); 
+  pinMode(vccpin,OUTPUT);
+  pinMode(xpin,INPUT);
+  pinMode(ypin,INPUT);
+  pinMode(swpin, INPUT_PULLUP);
+  pinMode(melodypin, OUTPUT);
+  pinMode(moodpin, OUTPUT);
+  pinMode(Securitypin, INPUT);
+  pinMode(Security_ledpin, OUTPUT);
+  pinMode(streetlamp, INPUT);
+  pinMode(streetlamp_led, OUTPUT);
+  digitalWrite(gndpin, LOW);
+  digitalWrite(vccpin, HIGH); 
+  Serial.begin(9600);    
+
+  Serial.print("++++ Memu ++++");
+  Serial.println("1. Left - Melody");
+  Serial.println("2. Right - Moodlight");
+  Serial.println("3. UP - Security");
+  Serial.println("4. Down - Streetlamp");
+  Serial.println("5. push s/w - STOP");
+}
+void loop() {
+ int xVal = map(analogRead(xpin), 0, 1023, -1,2); // xVal 값의 범위를 -1,2로 초기화
+  Serial.print("xVal : ");
+  Serial.println(xVal);
+  delay(100);
+ int yVal= map(analogRead(ypin), 0, 1023, -1,2 ); // yVal 값의 범위를 -1,2로 초기화
+  Serial.print("yVal : ");
+  Serial.println(yVal);
+  delay(100);
+ int sVal = digitalRead(swpin); // sVal을 swpin 값으로 읽음
+  if(sVal==0) // sVal값이 0일때
+  {
+    Serial.print (" off "); // sVal값이 0일때 "off"
+  }
+  else
+  {
+    Serial.print("  on  ");  // sVal값이 0이아니면 "on"
+    
+  }
+  Serial.println(sVal);
+  delay(500);
+  
+  if(sVal == 1) // 조이스틱이 전원이 들어온 경우 실행 설정
+  {
+      if(yVal < 0) // 조이스틱방향 값이 yVal < 0 경우 Left함수를 호출
+      {
+        Left();
+      }
+      if(yVal>0) // 조이스틱방향 값이 yVal > 0 경우 Right함수를 호출
+      {
+        Right();
+      }
+      if(xVal>0) // 조이스틱방향 값이 yVal > 0 경우 Up함수를 호출
+      {
+        Up();
+      }
+      if(xVal<0)  // 조이스틱방향 값이 yVal < 0 경우 Down함수를 호출
+      {
+        Down(); 
+      }
+      if(sVal==0) // 조이스틱방향 값이 sVal==0 경우 Push함수를 호출
+      {
+        Push();
+      }
+   }
+}
+
+void Left(void) // 스피커 모듈을 이용한 멜로디라인 만들기
+{
+  tone(melodypin, scaledata[0], 300); 
+  delay(200);
+
+  tone(melodypin, scaledata[1], 300); 
+  delay(200);
+ 
+  tone(melodypin, scaledata[2], 300); 
+  delay(200);
+
+  tone(melodypin, scaledata[3], 300); 
+  delay(200);
+      
+  tone(melodypin, scaledata[4], 300); 
+  delay(200);
+
+  tone(melodypin, scaledata[5], 300); 
+  delay(200);
+
+  tone(melodypin, scaledata[6], 300); 
+  delay(200);
+      
+  tone(melodypin, scaledata[7], 300); 
+  delay(200);
+ 
+  noTone(melodypin);
+  delay(100);
+}
+
+void Right(void)
+{
+  for (int i=0; i<255; i+=2) // i가 0부터 255범위까지 ifmf 2씩 증가 , 불빛을 강하게 하기위해서
+{
+  analogWrite(moodpin,i); // 아날로그 무드핀 i를 적용
+  delay(50);              // 딜레이 0.05초
+}
+ analogWrite(moodpin,0); // 아날로그 무드핀이 0인경우 종료.
+}
+void Up(void)
+{
+  int val = digitalRead(Securitypin); // val은 digitalRead(Securitypin)의 저장값으로 선언.
+  if(val == 0) //val이 0일때.
+  {
+    digitalWrite(Security_ledpin, HIGH); //외부침입 장치에 신호가 발생
+    tone(melodypin,600);                 // 멜로디 나옴.
+    Serial.print(" 위험 ");             // 위험이라는 신호를 시리얼 모니터에 출력.
+  }
+  else
+  {
+    digitalWrite(Security_ledpin, LOW);  //외부침입 장치에 신호가 발생 안할 시.
+    noTone(melodypin);                   //
+    Serial.print(" 안전 ");             // 안전이라는 신호를 시리얼 모니터에 출력
+  }
+}
+void Down(void)
+{
+  int val = analogRead(streetlamp);     //analogRead(streetlamp)를 저장할 val을 선언.
+
+  Serial.print(val);                   
+  if(val >= 1)                          // 만약 스트릿램프리드 값이 1보다 작거나 같은경우
+  {
+    digitalWrite(streetlamp_led, HIGH); // 스트릿램프에 불이 들어옴
+  }
+  else
+  {
+    digitalWrite(streetlamp_led,LOW);   // 반대로 될 시 불이 들어 오지 않음.
+  }
+}
+void Push(void)             
+{
+  int sVal = digitalRead(swpin);        // digitalRead(swpin)을 저장할 변수 sVal을 선언
+  
+  if(sVal == 0)                         // 만약 sVal 값이 0이면,
+  {
+    digitalWrite(swpin, LOW);           // swpin의 전원은 0
+  }
+}
